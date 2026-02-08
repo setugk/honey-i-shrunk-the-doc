@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Honey I Shrunk the Doc</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #18181b;
+      --surface-hover: #27272a;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #52525b;
+      --accent: #818cf8;
+      --accent-dim: rgba(129, 140, 248, 0.12);
+      --success: #4ade80;
+      --success-dim: rgba(74, 222, 128, 0.12);
+      --danger: #f87171;
+      --danger-dim: rgba(248, 113, 113, 0.12);
+      --border: #3f3f46;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-top: 20px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: 20px;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .upload-zone.compact {
+      padding: 20px;
+    }
+
+    .upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .upload-zone.compact .upload-icon {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    .upload-text {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      font-size: 1rem;
+    }
+
+    .upload-zone.compact .upload-text {
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .upload-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+      min-height: 52px;
+      text-decoration: none;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:disabled:active { transform: none; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #000;
+      font-weight: 700;
+    }
+
+    .btn-create {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+      font-size: 1.05rem;
+      padding: 18px;
+      min-height: 58px;
+      margin-top: 4px;
+    }
+
+    .btn-block {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* File list */
+    .file-list {
+      margin-bottom: 20px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .file-num {
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    .file-thumb {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+      background: var(--surface-hover);
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .icon-btn:hover { background: var(--border); color: var(--text-primary); }
+    .icon-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .icon-btn:disabled:hover { background: var(--surface-hover); color: var(--text-secondary); }
+    .icon-btn.danger:hover { background: var(--danger-dim); color: var(--danger); }
+
+    /* Size section */
+    .size-section {
+      margin-bottom: 16px;
+    }
+
+    .size-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .size-options {
+      display: flex;
+      gap: 8px;
+    }
+
+    .size-btn {
+      flex: 1;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      padding: 12px 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      min-height: 60px;
+    }
+
+    .size-btn span {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-tertiary);
+    }
+
+    .size-btn.active {
+      border-color: var(--accent);
+      color: var(--text-primary);
+      background: var(--accent-dim);
+    }
+
+    .size-btn.active span {
+      color: var(--accent);
+    }
+
+    /* Processing */
+    .processing {
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 14px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #processing-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Download section */
+    .download-section {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .success-icon {
+      width: 60px;
+      height: 60px;
+      background: var(--success-dim);
+      color: var(--success);
+      border-radius: 50%;
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+    }
+
+    .success-text {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .success-sub {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 20px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      color: var(--text-primary);
+      padding: 12px 20px;
+      border-radius: 24px;
+      font-size: 0.875rem;
+      border: 1px solid var(--border);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      z-index: 100;
+      max-width: calc(100vw - 40px);
+      text-align: center;
+    }
+
+    .toast.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Honey I Shrunk the Doc</h1>
+      <p class="subtitle">Combine photos and documents into one small PDF</p>
+    </header>
+
+    <div id="upload-zone" class="upload-zone">
+      <div class="upload-icon">📄</div>
+      <p class="upload-text">Tap to add photos or documents</p>
+      <div class="upload-buttons">
+        <button class="btn btn-primary" id="btn-camera">📷 Take Photo</button>
+        <button class="btn btn-ghost" id="btn-files">📁 Add Files</button>
+      </div>
+    </div>
+
+    <input type="file" id="input-camera" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="input-files" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" multiple style="display:none">
+
+    <div id="file-list" class="file-list hidden"></div>
+
+    <div id="size-section" class="size-section hidden">
+      <p class="size-label">How small should the output be?</p>
+      <div class="size-options">
+        <button class="size-btn" data-size="small">Small<span>~1 MB</span></button>
+        <button class="size-btn active" data-size="medium">Medium<span>~2 MB</span></button>
+        <button class="size-btn" data-size="large">Large<span>~4 MB</span></button>
+      </div>
+    </div>
+
+    <button id="btn-create" class="btn btn-create hidden" disabled>Create PDF</button>
+
+    <div id="processing" class="processing hidden">
+      <div class="spinner"></div>
+      <p id="processing-text">Working on it…</p>
+    </div>
+
+    <div id="download-section" class="download-section hidden">
+      <div class="success-icon">✓</div>
+      <p class="success-text">Your PDF is ready!</p>
+      <p class="success-sub" id="file-size-info"></p>
+      <a id="download-link" class="btn btn-success btn-block" download="document.pdf">⬇ Download PDF</a>
+      <button id="btn-restart" class="btn btn-ghost btn-block">Start Over</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ============ CONFIG ============
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const SIZE_PRESETS = {
+      small:  { quality: 0.45, maxWidth: 1200, label: 'Small',  approx: '~1 MB' },
+      medium: { quality: 0.65, maxWidth: 1800, label: 'Medium', approx: '~2 MB' },
+      large:  { quality: 0.80, maxWidth: 2400, label: 'Large',  approx: '~4 MB' }
+    };
+
+    // ============ STATE ============
+    let files = [];
+    let targetSize = 'medium';
+    let nextId = 1;
+
+    // ============ HELPERS ============
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Could not read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Could not load image'));
+        img.src = src;
+      });
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 3500);
+    }
+
+    function setProcessingText(text) {
+      document.getElementById('processing-text').textContent = text;
+    }
+
+    // ============ FILE HANDLING ============
+    async function addImageFile(file) {
+      const dataUrl = await fileToDataUrl(file);
+      const img = await loadImage(dataUrl);
+      files.push({
+        id: nextId++,
+        name: file.name,
+        dataUrl,
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      });
+    }
+
+    async function addPDFFile(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const numPages = pdf.numPages;
+
+      for (let i = 1; i <= numPages; i++) {
+        setProcessingText(`Reading ${file.name} — page ${i} of ${numPages}…`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        files.push({
+          id: nextId++,
+          name: numPages > 1 ? `${file.name} — p${i}` : file.name,
+          dataUrl,
+          width: canvas.width,
+          height: canvas.height
+        });
+      }
+    }
+
+    async function handleFiles(fileList) {
+      const supported = Array.from(fileList).filter(f =>
+        f.type.startsWith('image/') || f.type === 'application/pdf'
+      );
+
+      if (supported.length === 0) {
+        showToast('No supported files found. Use photos or PDF files.');
+        return;
+      }
+
+      document.getElementById('upload-zone').classList.add('compact');
+      document.getElementById('processing').classList.remove('hidden');
+      document.getElementById('btn-create').classList.add('hidden');
+      setProcessingText('Loading files…');
+
+      for (const file of supported) {
+        try {
+          setProcessingText(`Loading ${file.name}…`);
+          if (file.type === 'application/pdf') {
+            await addPDFFile(file);
+          } else {
+            await addImageFile(file);
+          }
+        } catch (e) {
+          showToast(`Couldn't load "${file.name}". Try a different file.`);
+        }
+      }
+
+      document.getElementById('processing').classList.add('hidden');
+      render();
+
+      // Reset file inputs so same file can be added again
+      document.getElementById('input-camera').value = '';
+      document.getElementById('input-files').value = '';
+    }
+
+    function removeFile(id) {
+      files = files.filter(f => f.id !== id);
+      render();
+    }
+
+    function moveFile(id, direction) {
+      const idx = files.findIndex(f => f.id === id);
+      if (direction === 'up' && idx > 0) {
+        [files[idx - 1], files[idx]] = [files[idx], files[idx - 1]];
+      } else if (direction === 'down' && idx < files.length - 1) {
+        [files[idx], files[idx + 1]] = [files[idx + 1], files[idx]];
+      }
+      render();
+    }
+
+    // ============ IMAGE COMPRESSION ============
+    async function compressImage(dataUrl, origWidth, origHeight, quality, maxWidth) {
+      const img = await loadImage(dataUrl);
+
+      let w = origWidth;
+      let h = origHeight;
+
+      if (w > maxWidth) {
+        const ratio = maxWidth / w;
+        w = maxWidth;
+        h = Math.round(origHeight * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      return new Promise(resolve => {
+        canvas.toBlob(blob => resolve({ blob, width: w, height: h }), 'image/jpeg', quality);
+      });
+    }
+
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    // ============ PDF CREATION ============
+    async function createPDF() {
+      const { jsPDF } = window.jspdf;
+      const preset = SIZE_PRESETS[targetSize];
+      const { quality, maxWidth } = preset;
+
+      document.getElementById('btn-create').classList.add('hidden');
+      document.getElementById('processing').classList.remove('hidden');
+      setProcessingText('Compressing…');
+
+      try {
+        let doc = null;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          setProcessingText(`Processing ${i + 1} of ${files.length}…`);
+
+          const { blob, width, height } = await compressImage(
+            file.dataUrl, file.width, file.height, quality, maxWidth
+          );
+          const compressedUrl = await blobToDataUrl(blob);
+
+          // Calculate page dimensions keeping aspect ratio, A4 width as base
+          const pageW = 210; // mm
+          const pageH = Math.round((height / width) * pageW);
+          const orientation = width >= height ? 'l' : 'p';
+          const [pw, ph] = orientation === 'l' ? [pageH, pageW] : [pageW, pageH];
+
+          if (!doc) {
+            doc = new jsPDF({ orientation, unit: 'mm', format: [pw, ph], compress: true });
+          } else {
+            doc.addPage([pw, ph], orientation);
+          }
+
+          doc.addImage(compressedUrl, 'JPEG', 0, 0, pw, ph, undefined, 'MEDIUM');
+        }
+
+        setProcessingText('Finishing up…');
+
+        const pdfBlob = doc.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+
+        const downloadLink = document.getElementById('download-link');
+        downloadLink.href = url;
+        downloadLink.download = 'document.pdf';
+
+        document.getElementById('file-size-info').textContent = formatBytes(pdfBlob.size);
+        document.getElementById('processing').classList.add('hidden');
+        document.getElementById('download-section').classList.remove('hidden');
+      } catch (e) {
+        document.getElementById('processing').classList.add('hidden');
+        document.getElementById('btn-create').classList.remove('hidden');
+        showToast('Something went wrong. Please try again.');
+      }
+    }
+
+    // ============ RENDER ============
+    function render() {
+      const hasFiles = files.length > 0;
+
+      document.getElementById('upload-zone').classList.toggle('compact', hasFiles);
+      document.getElementById('file-list').classList.toggle('hidden', !hasFiles);
+      document.getElementById('size-section').classList.toggle('hidden', !hasFiles);
+      document.getElementById('btn-create').classList.toggle('hidden', !hasFiles);
+      document.getElementById('btn-create').disabled = !hasFiles;
+      document.getElementById('download-section').classList.add('hidden');
+
+      if (!hasFiles) {
+        document.getElementById('upload-zone').classList.remove('compact');
+      }
+
+      renderFileList();
+    }
+
+    function renderFileList() {
+      const container = document.getElementById('file-list');
+      if (files.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = files.map((f, i) => `
+        <div class="file-item">
+          <div class="file-num">${i + 1}</div>
+          <img class="file-thumb" src="${f.dataUrl}" alt="${escapeHtml(f.name)}">
+          <div class="file-info">
+            <div class="file-name">${escapeHtml(f.name)}</div>
+          </div>
+          <div class="file-actions">
+            <button class="icon-btn" onclick="moveFile(${f.id}, 'up')" ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
+            <button class="icon-btn" onclick="moveFile(${f.id}, 'down')" ${i === files.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
+            <button class="icon-btn danger" onclick="removeFile(${f.id})" title="Remove">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ============ INIT ============
+    function init() {
+      const inputCamera = document.getElementById('input-camera');
+      const inputFiles = document.getElementById('input-files');
+
+      document.getElementById('btn-camera').addEventListener('click', e => {
+        e.stopPropagation();
+        inputCamera.click();
+      });
+
+      document.getElementById('btn-files').addEventListener('click', e => {
+        e.stopPropagation();
+        inputFiles.click();
+      });
+
+      inputCamera.addEventListener('change', e => {
+        if (e.target.files.length) handleFiles(e.target.files);
+      });
+
+      inputFiles.addEventListener('change', e => {
+        if (e.target.files.length) handleFiles(e.target.files);
+      });
+
+      // Drop zone click (but not on buttons)
+      document.getElementById('upload-zone').addEventListener('click', e => {
+        if (!e.target.closest('.btn')) inputFiles.click();
+      });
+
+      // Drag and drop
+      const zone = document.getElementById('upload-zone');
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        handleFiles(e.dataTransfer.files);
+      });
+
+      // Size selector
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          targetSize = btn.dataset.size;
+        });
+      });
+
+      // Create button
+      document.getElementById('btn-create').addEventListener('click', createPDF);
+
+      // Restart
+      document.getElementById('btn-restart').addEventListener('click', () => {
+        files = [];
+        nextId = 1;
+        targetSize = 'medium';
+        document.getElementById('download-section').classList.add('hidden');
+        document.getElementById('processing').classList.add('hidden');
+        document.querySelectorAll('.size-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.size === 'medium');
+        });
+        render();
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
