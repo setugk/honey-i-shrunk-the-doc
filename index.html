@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.4/Sortable.min.js"></script>
   <style>
     :root {
       --bg: #0a0a0b;
@@ -187,16 +188,16 @@
       transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
 
-    .file-item.dragging {
-      opacity: 0.2;
+    .sortable-ghost {
+      opacity: 0.15;
     }
 
-    .drop-placeholder {
-      height: 100px;
-      border: 2px dashed var(--accent);
-      border-radius: var(--radius-sm);
-      background: var(--accent-dim);
-      margin-bottom: 8px;
+    .sortable-chosen {
+      background: var(--surface-hover);
+    }
+
+    .sortable-drag {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
     .drag-handle {
@@ -540,7 +541,7 @@
   <div id="toast" class="toast"></div>
 
   <footer>
-    <p>v1.3 &middot; &copy; 2026 Setu Kathawate</p>
+    <p>v1.4 &middot; &copy; 2026 Setu Kathawate</p>
   </footer>
 
   <script>
@@ -825,7 +826,7 @@
       }
 
       renderFileList();
-      initDragDrop();
+      initSortable();
     }
 
     function renderFileList() {
@@ -836,7 +837,7 @@
       }
 
       container.innerHTML = files.map((f, i) => `
-        <div class="file-item" draggable="true" data-id="${f.id}">
+        <div class="file-item" data-id="${f.id}">
           <div class="drag-handle" title="Drag to reorder">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <line x1="5" y1="7" x2="19" y2="7"/>
@@ -862,63 +863,30 @@
       `).join('');
     }
 
-    // ============ DRAG AND DROP REORDER ============
-    let dragSrcId = null;
-    let dropTargetId = null;
-    let dropPosition = 'before';
-    let placeholder = null;
+    // ============ SORTABLE REORDER ============
+    let sortableInstance = null;
 
-    function initDragDrop() {
-      const container = document.getElementById('file-list');
-
-      placeholder = document.createElement('div');
-      placeholder.className = 'drop-placeholder';
-
-      // dragstart/dragend on items
-      document.querySelectorAll('.file-item[draggable]').forEach(item => {
-        item.addEventListener('dragstart', e => {
-          dragSrcId = parseInt(item.dataset.id);
-          e.dataTransfer.effectAllowed = 'move';
-          requestAnimationFrame(() => item.classList.add('dragging'));
-        });
-
-        item.addEventListener('dragend', () => {
-          item.classList.remove('dragging');
-          if (placeholder.parentNode) placeholder.remove();
-        });
-      });
-
-      // dragover and drop on container to avoid child element issues
-      container.addEventListener('dragover', e => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        const target = e.target.closest('.file-item[draggable]');
-        if (!target) return;
-        const rect = target.getBoundingClientRect();
-        dropTargetId = parseInt(target.dataset.id);
-        dropPosition = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
-        if (dropPosition === 'before') {
-          container.insertBefore(placeholder, target);
-        } else {
-          container.insertBefore(placeholder, target.nextSibling);
+    function initSortable() {
+      if (sortableInstance) sortableInstance.destroy();
+      if (files.length < 2) return;
+      sortableInstance = Sortable.create(document.getElementById('file-list'), {
+        handle: '.drag-handle',
+        animation: 180,
+        easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        onEnd: () => {
+          // Sync files array to new DOM order
+          const orderedIds = Array.from(
+            document.querySelectorAll('.file-item[data-id]')
+          ).map(el => parseInt(el.dataset.id));
+          files.sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+          // Update numbers without full re-render
+          document.querySelectorAll('.file-item[data-id]').forEach((el, i) => {
+            el.querySelector('.file-num').textContent = i + 1;
+          });
         }
-      });
-
-      container.addEventListener('drop', e => {
-        e.preventDefault();
-        if (placeholder.parentNode) placeholder.remove();
-        if (dragSrcId === null || dropTargetId === null || dragSrcId === dropTargetId) return;
-
-        const srcIdx = files.findIndex(f => f.id === dragSrcId);
-        const [moved] = files.splice(srcIdx, 1);
-        // Recalculate target index after removal
-        const newTgtIdx = files.findIndex(f => f.id === dropTargetId);
-        if (newTgtIdx === -1) { files.push(moved); } else {
-          files.splice(dropPosition === 'after' ? newTgtIdx + 1 : newTgtIdx, 0, moved);
-        }
-        dragSrcId = null;
-        dropTargetId = null;
-        render();
       });
     }
 
