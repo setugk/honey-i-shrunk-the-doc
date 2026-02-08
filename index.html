@@ -86,29 +86,15 @@
       background: var(--accent-dim);
     }
 
-    .upload-zone.compact {
-      padding: 20px;
-    }
-
     .upload-icon {
       font-size: 2.5rem;
       margin-bottom: 10px;
-    }
-
-    .upload-zone.compact .upload-icon {
-      font-size: 1.8rem;
-      margin-bottom: 6px;
     }
 
     .upload-text {
       color: var(--text-secondary);
       margin-bottom: 16px;
       font-size: 1rem;
-    }
-
-    .upload-zone.compact .upload-text {
-      font-size: 0.9rem;
-      margin-bottom: 12px;
     }
 
     .upload-buttons {
@@ -171,9 +157,99 @@
       margin-top: 12px;
     }
 
+    /* Back link */
+    .back-link {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+
+    .back-link:hover {
+      color: var(--text-secondary);
+    }
+
+    /* Step titles */
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .step-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-tertiary);
+      margin-bottom: 16px;
+    }
+
+    /* Step 2 footer */
+    .step2-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+    }
+
+    .step2-footer .btn {
+      min-width: 140px;
+    }
+
+    .start-over-link {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+
+    .start-over-link:hover {
+      color: var(--text-secondary);
+    }
+
+    /* Add more card */
+    .add-more-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: transparent;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 24px 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      color: var(--text-tertiary);
+      font-size: 0.95rem;
+      width: 100%;
+    }
+
+    .add-more-card:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--text-secondary);
+    }
+
+    .add-more-card:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .add-more-card:disabled:hover {
+      border-color: var(--border);
+      background: transparent;
+      color: var(--text-tertiary);
+    }
+
     /* File list */
     .file-list {
-      margin-bottom: 20px;
+      margin-bottom: 0;
     }
 
     .file-item {
@@ -274,15 +350,7 @@
 
     /* Size section */
     .size-section {
-      margin-top: 40px;
       margin-bottom: 16px;
-    }
-
-    .size-label {
-      color: var(--text-primary);
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 12px;
     }
 
     .size-options {
@@ -342,7 +410,8 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #processing-text {
+    #processing-text,
+    #loading-text {
       color: var(--text-secondary);
       font-size: 0.95rem;
     }
@@ -489,46 +558,69 @@
       <p class="subtitle">Combine photos and documents into one small PDF</p>
     </header>
 
-    <div id="upload-zone" class="upload-zone">
-      <div class="upload-icon">📄</div>
-      <p class="upload-text">Tap to add photos or documents</p>
-      <div class="upload-buttons">
-        <button class="btn btn-primary" id="btn-camera">📷 Take Photo</button>
-        <button class="btn btn-ghost" id="btn-files">📁 Add Files</button>
-      </div>
-    </div>
-
     <input type="file" id="input-camera" accept="image/*" capture="environment" style="display:none">
     <input type="file" id="input-files" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" multiple style="display:none">
 
-    <div id="file-list" class="file-list hidden"></div>
-
-    <div id="size-section" class="size-section hidden">
-      <p class="size-label">How small should the output be?</p>
-      <div class="size-options">
-        <button class="size-btn" data-size="small">Small<span>~1 MB</span></button>
-        <button class="size-btn active" data-size="medium">Medium<span>~2 MB</span></button>
-        <button class="size-btn" data-size="large">Large<span>~4 MB</span></button>
+    <!-- Step 1: Upload -->
+    <div id="step-1">
+      <div id="step-1-body">
+        <div id="upload-zone" class="upload-zone">
+          <div class="upload-icon">📄</div>
+          <p class="upload-text">Tap to add photos or documents</p>
+          <div class="upload-buttons">
+            <button class="btn btn-primary" id="btn-camera">📷 Take Photo</button>
+            <button class="btn btn-ghost" id="btn-files">📁 Add Files</button>
+          </div>
+        </div>
+        <div id="loading-files" class="processing hidden">
+          <div class="spinner"></div>
+          <p id="loading-text">Loading...</p>
+        </div>
       </div>
     </div>
 
-    <button id="btn-create" class="btn btn-create hidden" disabled>Create PDF</button>
-
-    <div id="processing" class="processing hidden">
-      <div class="spinner"></div>
-      <p id="processing-text">Working on it…</p>
+    <!-- Step 2: Organize -->
+    <div id="step-2" class="hidden">
+      <div id="step-2-body">
+        <p class="step-title">Arrange your pages</p>
+        <p class="step-subtitle">Drag to reorder. Remove what you don't need.</p>
+        <div id="file-list" class="file-list"></div>
+        <button id="btn-add-more" class="add-more-card">+ Add more files</button>
+        <div class="step2-footer">
+          <button class="start-over-link" id="btn-start-over">Start over</button>
+          <button id="btn-continue" class="btn btn-primary">Continue</button>
+        </div>
+      </div>
     </div>
 
-    <div id="download-section" class="download-section hidden">
-      <div class="success-icon">✓</div>
-      <p class="success-text">Your PDF is ready!</p>
-      <p class="success-sub" id="file-size-info"></p>
-      <div class="filename-wrap">
-        <input type="text" id="filename-input" class="filename-input" placeholder="document" value="document">
-        <span class="filename-suffix">.pdf</span>
+    <!-- Step 3: Compress & Download -->
+    <div id="step-3" class="hidden">
+      <button class="back-link" id="btn-back">← Back to arrange</button>
+      <p class="step-title">Choose output size</p>
+      <p class="step-subtitle">Smaller = lower quality. Medium works for most portals.</p>
+      <div id="size-section" class="size-section">
+        <div class="size-options">
+          <button class="size-btn" data-size="small">Small<span>~1 MB</span></button>
+          <button class="size-btn active" data-size="medium">Medium<span>~2 MB</span></button>
+          <button class="size-btn" data-size="large">Large<span>~4 MB</span></button>
+        </div>
       </div>
-      <a id="download-link" class="btn btn-success btn-block" download="document.pdf">⬇ Download PDF</a>
-      <button id="btn-restart" class="btn btn-ghost btn-block">Start Over</button>
+      <button id="btn-create" class="btn btn-create">Create PDF</button>
+      <div id="processing" class="processing hidden">
+        <div class="spinner"></div>
+        <p id="processing-text">Working on it...</p>
+      </div>
+      <div id="download-section" class="download-section hidden">
+        <div class="success-icon">✓</div>
+        <p class="success-text">Your PDF is ready!</p>
+        <p class="success-sub" id="file-size-info"></p>
+        <div class="filename-wrap">
+          <input type="text" id="filename-input" class="filename-input" placeholder="document" value="document">
+          <span class="filename-suffix">.pdf</span>
+        </div>
+        <a id="download-link" class="btn btn-success btn-block" download="document.pdf">⬇ Download PDF</a>
+        <button id="btn-restart" class="btn btn-ghost btn-block">Start Over</button>
+      </div>
     </div>
   </div>
 
@@ -541,14 +633,13 @@
   <div id="toast" class="toast"></div>
 
   <footer>
-    <p>v1.5 &middot; &copy; 2026 Setu Kathawate</p>
+    <p>v1.6 &middot; &copy; 2026 Setu Kathawate</p>
   </footer>
 
   <script>
     // ============ CONFIG ============
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // Target bytes for the full PDF output (reserve ~80KB for PDF structure)
     const SIZE_PRESETS = {
       small:  { targetBytes: 1024 * 1024,       label: 'Small',  approx: '~1 MB' },
       medium: { targetBytes: 2 * 1024 * 1024,   label: 'Medium', approx: '~2 MB' },
@@ -559,6 +650,7 @@
     let files = [];
     let targetSize = 'medium';
     let nextId = 1;
+    let currentStep = 1;
 
     // ============ HELPERS ============
     function escapeHtml(text) {
@@ -597,6 +689,10 @@
       setTimeout(() => toast.classList.remove('visible'), 3500);
     }
 
+    function setLoadingText(text) {
+      document.getElementById('loading-text').textContent = text;
+    }
+
     function setProcessingText(text) {
       document.getElementById('processing-text').textContent = text;
     }
@@ -620,7 +716,7 @@
       const numPages = pdf.numPages;
 
       for (let i = 1; i <= numPages; i++) {
-        setProcessingText(`Reading ${file.name} — page ${i} of ${numPages}…`);
+        setLoadingText(`Reading ${file.name} — page ${i} of ${numPages}...`);
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 1.5 });
         const canvas = document.createElement('canvas');
@@ -649,14 +745,20 @@
         return;
       }
 
-      document.getElementById('upload-zone').classList.add('compact');
-      document.getElementById('processing').classList.remove('hidden');
-      document.getElementById('btn-create').classList.add('hidden');
-      setProcessingText('Loading files…');
+      const wasStep1 = currentStep === 1;
+      const addMoreBtn = document.getElementById('btn-add-more');
+
+      if (wasStep1) {
+        document.getElementById('loading-files').classList.remove('hidden');
+        setLoadingText('Loading...');
+      } else if (addMoreBtn) {
+        addMoreBtn.disabled = true;
+        addMoreBtn.textContent = 'Loading...';
+      }
 
       for (const file of supported) {
         try {
-          setProcessingText(`Loading ${file.name}…`);
+          setLoadingText(`Loading ${file.name}...`);
           if (file.type === 'application/pdf') {
             await addPDFFile(file);
           } else {
@@ -667,16 +769,29 @@
         }
       }
 
-      document.getElementById('processing').classList.add('hidden');
-      render();
+      if (wasStep1) {
+        document.getElementById('loading-files').classList.add('hidden');
+      } else if (addMoreBtn) {
+        addMoreBtn.disabled = false;
+        addMoreBtn.textContent = '+ Add more files';
+      }
+
+      if (wasStep1 && files.length > 0) {
+        currentStep = 2;
+      }
 
       // Reset file inputs so same file can be added again
       document.getElementById('input-camera').value = '';
       document.getElementById('input-files').value = '';
+
+      render();
     }
 
     function removeFile(id) {
       files = files.filter(f => f.id !== id);
+      if (files.length === 0 && currentStep === 2) {
+        currentStep = 1;
+      }
       render();
     }
 
@@ -734,7 +849,6 @@
       });
     }
 
-    // Iteratively compress an image to fit within targetBytes using fine-grained steps
     async function compressImageToTarget(dataUrl, origWidth, origHeight, targetBytes) {
       const steps = [
         { quality: 0.88, maxWidth: 2400 },
@@ -757,7 +871,6 @@
         if (result.blob.size <= targetBytes) return result;
       }
 
-      // Last resort
       return compressImageOnce(dataUrl, origWidth, origHeight, 0.12, 900);
     }
 
@@ -774,27 +887,25 @@
     async function createPDF() {
       const { jsPDF } = window.jspdf;
       const preset = SIZE_PRESETS[targetSize];
-      // Allocate budget per image (reserve ~80KB for PDF structure overhead)
       const perImageBudget = Math.floor((preset.targetBytes - 80 * 1024) / files.length);
 
       document.getElementById('btn-create').classList.add('hidden');
       document.getElementById('processing').classList.remove('hidden');
-      setProcessingText('Compressing…');
+      setProcessingText('Compressing...');
 
       try {
         let doc = null;
 
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
-          setProcessingText(`Processing ${i + 1} of ${files.length}…`);
+          setProcessingText(`Processing ${i + 1} of ${files.length}...`);
 
           const { blob, width, height } = await compressImageToTarget(
             file.dataUrl, file.width, file.height, perImageBudget
           );
           const compressedUrl = await blobToDataUrl(blob);
 
-          // Calculate page dimensions keeping aspect ratio, A4 width as base
-          const pageW = 210; // mm
+          const pageW = 210;
           const pageH = Math.round((height / width) * pageW);
           const orientation = width >= height ? 'l' : 'p';
           const [pw, ph] = orientation === 'l' ? [pageH, pageW] : [pageW, pageH];
@@ -808,7 +919,7 @@
           doc.addImage(compressedUrl, 'JPEG', 0, 0, pw, ph, undefined, 'MEDIUM');
         }
 
-        setProcessingText('Finishing up…');
+        setProcessingText('Finishing up...');
 
         const pdfBlob = doc.output('blob');
         const url = URL.createObjectURL(pdfBlob);
@@ -816,7 +927,6 @@
         const downloadLink = document.getElementById('download-link');
         downloadLink.href = url;
 
-        // Set filename from input, default to 'document'
         const nameInput = document.getElementById('filename-input');
         nameInput.value = 'document';
         const updateFilename = () => {
@@ -838,21 +948,31 @@
 
     // ============ RENDER ============
     function render() {
-      const hasFiles = files.length > 0;
-
-      document.getElementById('upload-zone').classList.toggle('compact', hasFiles);
-      document.getElementById('file-list').classList.toggle('hidden', !hasFiles);
-      document.getElementById('size-section').classList.toggle('hidden', !hasFiles);
-      document.getElementById('btn-create').classList.toggle('hidden', !hasFiles);
-      document.getElementById('btn-create').disabled = !hasFiles;
-      document.getElementById('download-section').classList.add('hidden');
-
-      if (!hasFiles) {
-        document.getElementById('upload-zone').classList.remove('compact');
+      // Step 1
+      const step1 = document.getElementById('step-1');
+      if (currentStep === 1) {
+        step1.classList.remove('hidden');
+      } else {
+        step1.classList.add('hidden');
       }
 
-      renderFileList();
-      initSortable();
+      // Step 2
+      const step2 = document.getElementById('step-2');
+      if (currentStep === 2) {
+        step2.classList.remove('hidden');
+        renderFileList();
+        initSortable();
+      } else {
+        step2.classList.add('hidden');
+      }
+
+      // Step 3
+      const step3 = document.getElementById('step-3');
+      if (currentStep === 3) {
+        step3.classList.remove('hidden');
+      } else {
+        step3.classList.add('hidden');
+      }
     }
 
     function renderFileList() {
@@ -902,12 +1022,10 @@
         delay: 150,
         delayOnTouchOnly: true,
         onEnd: () => {
-          // Sync files array to new DOM order
           const orderedIds = Array.from(
             document.querySelectorAll('.file-item[data-id]')
           ).map(el => parseInt(el.dataset.id));
           files.sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
-          // Update numbers without full re-render
           document.querySelectorAll('.file-item[data-id]').forEach((el, i) => {
             el.querySelector('.file-num').textContent = i + 1;
           });
@@ -928,7 +1046,6 @@
       document.getElementById('preview-img').src = '';
     }
 
-    // Close preview on Escape key
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closePreview();
     });
@@ -956,12 +1073,10 @@
         if (e.target.files.length) handleFiles(e.target.files);
       });
 
-      // Drop zone click (but not on buttons)
       document.getElementById('upload-zone').addEventListener('click', e => {
         if (!e.target.closest('.btn')) inputFiles.click();
       });
 
-      // Drag and drop
       const zone = document.getElementById('upload-zone');
       zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
       zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
@@ -971,7 +1086,6 @@
         handleFiles(e.dataTransfer.files);
       });
 
-      // Size selector
       document.querySelectorAll('.size-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
@@ -980,16 +1094,47 @@
         });
       });
 
-      // Create button
       document.getElementById('btn-create').addEventListener('click', createPDF);
 
-      // Restart
+      // Step navigation
+      document.getElementById('btn-continue').addEventListener('click', () => {
+        currentStep = 3;
+        // Reset step 3 UI for fresh creation
+        document.getElementById('btn-create').classList.remove('hidden');
+        document.getElementById('processing').classList.add('hidden');
+        document.getElementById('download-section').classList.add('hidden');
+        render();
+      });
+
+      document.getElementById('btn-back').addEventListener('click', () => {
+        currentStep = 2;
+        render();
+      });
+
+      document.getElementById('btn-add-more').addEventListener('click', () => {
+        inputFiles.click();
+      });
+
+      // Start over (from step 2)
+      document.getElementById('btn-start-over').addEventListener('click', () => {
+        files = [];
+        nextId = 1;
+        targetSize = 'medium';
+        currentStep = 1;
+        document.querySelectorAll('.size-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.size === 'medium');
+        });
+        render();
+      });
+
       document.getElementById('btn-restart').addEventListener('click', () => {
         files = [];
         nextId = 1;
         targetSize = 'medium';
+        currentStep = 1;
         document.getElementById('download-section').classList.add('hidden');
         document.getElementById('processing').classList.add('hidden');
+        document.getElementById('btn-create').classList.remove('hidden');
         document.querySelectorAll('.size-btn').forEach(b => {
           b.classList.toggle('active', b.dataset.size === 'medium');
         });
