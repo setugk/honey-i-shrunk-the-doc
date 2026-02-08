@@ -44,12 +44,18 @@
       min-height: 100vh;
       font-size: 16px;
       line-height: 1.5;
+      display: flex;
+      flex-direction: column;
     }
 
     .container {
       max-width: 560px;
       margin: 0 auto;
-      padding: 24px 20px 60px;
+      padding: 24px 20px 40px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
     }
 
     header {
@@ -149,7 +155,7 @@
       font-size: 1.05rem;
       padding: 18px;
       min-height: 58px;
-      margin-top: 4px;
+      margin-top: 16px;
     }
 
     .btn-block {
@@ -160,17 +166,21 @@
     /* Back link */
     .back-link {
       background: none;
-      border: none;
-      color: var(--text-tertiary);
-      font-size: 0.9rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 600;
       cursor: pointer;
-      padding: 0;
-      margin-bottom: 16px;
-      display: inline-block;
+      padding: 14px 20px;
+      margin-bottom: 48px;
+      align-self: flex-start;
+      transition: border-color 0.15s, color 0.15s;
     }
 
     .back-link:hover {
-      color: var(--text-secondary);
+      border-color: var(--text-tertiary);
+      color: var(--text-primary);
     }
 
     /* Step titles */
@@ -187,29 +197,23 @@
       margin-bottom: 16px;
     }
 
-    /* Step 2 footer */
-    .step2-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 16px;
-    }
-
-    .step2-footer .btn {
-      min-width: 140px;
-    }
-
     .start-over-link {
       background: none;
-      border: none;
-      color: var(--text-tertiary);
-      font-size: 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 600;
       cursor: pointer;
-      padding: 8px 0;
+      padding: 14px 20px;
+      margin-bottom: 48px;
+      align-self: flex-start;
+      transition: border-color 0.15s, color 0.15s;
     }
 
     .start-over-link:hover {
-      color: var(--text-secondary);
+      border-color: var(--text-tertiary);
+      color: var(--text-primary);
     }
 
     /* Add more card */
@@ -350,7 +354,7 @@
 
     /* Size section */
     .size-section {
-      margin-bottom: 16px;
+      margin-bottom: 48px;
     }
 
     .size-options {
@@ -538,11 +542,36 @@
       cursor: pointer;
     }
 
+    /* Step containers */
+    #step-1,
+    #step-3 {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    #step-2 {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #step-2-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #step-2 .file-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
     /* Footer */
     footer {
       text-align: center;
-      margin-top: 48px;
-      padding-top: 24px;
+      padding: 24px 20px;
       border-top: 1px solid var(--border);
       color: var(--text-tertiary);
       font-size: 0.8rem;
@@ -582,14 +611,12 @@
     <!-- Step 2: Organize -->
     <div id="step-2" class="hidden">
       <div id="step-2-body">
+        <button class="start-over-link" id="btn-start-over">Start over</button>
         <p class="step-title">Arrange your pages</p>
         <p class="step-subtitle">Drag to reorder. Remove what you don't need.</p>
         <div id="file-list" class="file-list"></div>
         <button id="btn-add-more" class="add-more-card">+ Add more files</button>
-        <div class="step2-footer">
-          <button class="start-over-link" id="btn-start-over">Start over</button>
-          <button id="btn-continue" class="btn btn-primary">Continue</button>
-        </div>
+        <button id="btn-continue" class="btn btn-create">Next: Choose output size</button>
       </div>
     </div>
 
@@ -633,7 +660,7 @@
   <div id="toast" class="toast"></div>
 
   <footer>
-    <p>v1.6 &middot; &copy; 2026 Setu Kathawate</p>
+    <p>v1.7 &middot; &copy; 2026 Setu Kathawate</p>
   </footer>
 
   <script>

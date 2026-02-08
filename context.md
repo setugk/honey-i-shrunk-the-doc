@@ -21,7 +21,7 @@ A simple tool for combining photos and documents into one small, compressed PDF 
 - GitHub: https://github.com/setugk/honey-i-shrunk-the-doc
 - Branch: `main`
 - Deployment: Cloudflare Pages (auto-deploy from main)
-- URL: shrink.setugk.com (DNS TBD)
+- URL: https://pdfapp.s37u.com
 
 ## File structure
 ```
@@ -37,7 +37,7 @@ Honey I Shrunk the Doc/
 ```
 
 ## Current version
-v1.5
+v1.7
 
 ## Design tokens
 ```
@@ -53,13 +53,10 @@ v1.5
 --radius: 16px
 ```
 
-## App flow
-1. Upload zone (compact when files present) — camera button + add files button + drag/drop
-2. File list — numbered thumbnails with ↑ ↓ reorder and × remove
-3. Size selector — Small (~1MB), Medium (~2MB, default), Large (~4MB)
-4. Create PDF button
-5. Processing spinner with status text
-6. Download section with file size shown
+## App flow (3-step progressive disclosure)
+1. **Step 1: Upload** — camera button + add files button + drag/drop, auto-advances to step 2
+2. **Step 2: Arrange** — numbered thumbnails with drag reorder, ↑↓ arrows, × remove; "Add more files" card; "Start over" link; "Continue" button
+3. **Step 3: Compress** — "← Back to arrange" link; size selector (Small/Medium/Large); Create PDF button; processing spinner; download section with filename input
 
 ## Key technical decisions
 - Images compressed via canvas (quality + maxWidth per preset)
