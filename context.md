@@ -37,7 +37,7 @@ Honey I Shrunk the Doc/
 ```
 
 ## Current version
-v1.2
+v1.3
 
 ## Design tokens
 ```

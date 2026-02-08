@@ -178,27 +178,52 @@
     .file-item {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       background: var(--surface);
       border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      margin-bottom: 8px;
+      padding: 14px 14px;
+      margin-bottom: 10px;
       border: 1px solid var(--border);
+      transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
+
+    .file-item.dragging {
+      opacity: 0.2;
+    }
+
+    .drop-placeholder {
+      height: 100px;
+      border: 2px dashed var(--accent);
+      border-radius: var(--radius-sm);
+      background: var(--accent-dim);
+      margin-bottom: 8px;
+    }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      padding: 4px 4px;
+      flex-shrink: 0;
+    }
+
+    .drag-handle:hover { color: var(--text-secondary); }
+    .drag-handle:active { cursor: grabbing; }
 
     .file-num {
       color: var(--text-tertiary);
-      font-size: 0.8rem;
+      font-size: 1rem;
       font-weight: 700;
-      min-width: 18px;
+      min-width: 22px;
       text-align: center;
     }
 
     .file-thumb {
-      width: 52px;
-      height: 52px;
+      width: 72px;
+      height: 72px;
       object-fit: cover;
-      border-radius: 6px;
+      border-radius: 8px;
       flex-shrink: 0;
       background: var(--surface-hover);
       cursor: zoom-in;
@@ -213,7 +238,7 @@
     }
 
     .file-name {
-      font-size: 0.875rem;
+      font-size: 1rem;
       color: var(--text-secondary);
       white-space: nowrap;
       overflow: hidden;
@@ -227,14 +252,14 @@
     }
 
     .icon-btn {
-      width: 36px;
-      height: 36px;
+      width: 42px;
+      height: 42px;
       border: none;
       background: var(--surface-hover);
       color: var(--text-secondary);
       border-radius: 8px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 1.1rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -248,13 +273,15 @@
 
     /* Size section */
     .size-section {
+      margin-top: 28px;
       margin-bottom: 16px;
     }
 
     .size-label {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin-bottom: 10px;
+      color: var(--text-primary);
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 12px;
     }
 
     .size-options {
@@ -513,7 +540,7 @@
   <div id="toast" class="toast"></div>
 
   <footer>
-    <p>v1.2 &middot; &copy; 2026 Setu Kathawate</p>
+    <p>v1.3 &middot; &copy; 2026 Setu Kathawate</p>
   </footer>
 
   <script>
@@ -798,6 +825,7 @@
       }
 
       renderFileList();
+      initDragDrop();
     }
 
     function renderFileList() {
@@ -808,7 +836,14 @@
       }
 
       container.innerHTML = files.map((f, i) => `
-        <div class="file-item">
+        <div class="file-item" draggable="true" data-id="${f.id}">
+          <div class="drag-handle" title="Drag to reorder">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="5" y1="7" x2="19" y2="7"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <line x1="5" y1="17" x2="19" y2="17"/>
+            </svg>
+          </div>
           <div class="file-num">${i + 1}</div>
           <img class="file-thumb" src="${f.dataUrl}" alt="${escapeHtml(f.name)}" onclick="openPreview('${f.id}')" title="Tap to enlarge">
           <div class="file-info">
@@ -817,10 +852,74 @@
           <div class="file-actions">
             <button class="icon-btn" onclick="moveFile(${f.id}, 'up')" ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
             <button class="icon-btn" onclick="moveFile(${f.id}, 'down')" ${i === files.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
-            <button class="icon-btn danger" onclick="removeFile(${f.id})" title="Remove">✕</button>
+            <button class="icon-btn danger" onclick="removeFile(${f.id})" title="Remove">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 9l-1.995 11.346A2 2 0 0116.035 22h-8.07a2 2 0 01-1.97-1.654L4 9"/><path d="M21 6H3"/><path d="M10 11v5M14 11v5"/><path d="M15 6l-1-3H10L9 6"/>
+              </svg>
+            </button>
           </div>
         </div>
       `).join('');
+    }
+
+    // ============ DRAG AND DROP REORDER ============
+    let dragSrcId = null;
+    let dropTargetId = null;
+    let dropPosition = 'before';
+    let placeholder = null;
+
+    function initDragDrop() {
+      const container = document.getElementById('file-list');
+
+      placeholder = document.createElement('div');
+      placeholder.className = 'drop-placeholder';
+
+      // dragstart/dragend on items
+      document.querySelectorAll('.file-item[draggable]').forEach(item => {
+        item.addEventListener('dragstart', e => {
+          dragSrcId = parseInt(item.dataset.id);
+          e.dataTransfer.effectAllowed = 'move';
+          requestAnimationFrame(() => item.classList.add('dragging'));
+        });
+
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          if (placeholder.parentNode) placeholder.remove();
+        });
+      });
+
+      // dragover and drop on container to avoid child element issues
+      container.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const target = e.target.closest('.file-item[draggable]');
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        dropTargetId = parseInt(target.dataset.id);
+        dropPosition = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+        if (dropPosition === 'before') {
+          container.insertBefore(placeholder, target);
+        } else {
+          container.insertBefore(placeholder, target.nextSibling);
+        }
+      });
+
+      container.addEventListener('drop', e => {
+        e.preventDefault();
+        if (placeholder.parentNode) placeholder.remove();
+        if (dragSrcId === null || dropTargetId === null || dragSrcId === dropTargetId) return;
+
+        const srcIdx = files.findIndex(f => f.id === dragSrcId);
+        const [moved] = files.splice(srcIdx, 1);
+        // Recalculate target index after removal
+        const newTgtIdx = files.findIndex(f => f.id === dropTargetId);
+        if (newTgtIdx === -1) { files.push(moved); } else {
+          files.splice(dropPosition === 'after' ? newTgtIdx + 1 : newTgtIdx, 0, moved);
+        }
+        dragSrcId = null;
+        dropTargetId = null;
+        render();
+      });
     }
 
     // ============ PREVIEW ============
