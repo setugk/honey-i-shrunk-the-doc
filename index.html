@@ -148,6 +148,11 @@
       font-weight: 700;
     }
 
+    .btn-success.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
     .btn-create {
       background: var(--accent);
       color: #fff;
@@ -181,6 +186,25 @@
     .back-link:hover {
       border-color: var(--text-tertiary);
       color: var(--text-primary);
+    }
+
+    /* Page status */
+    .page-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 48px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .page-status-icon {
+      flex-shrink: 0;
+      color: var(--text-tertiary);
     }
 
     /* Step titles */
@@ -451,6 +475,14 @@
       margin-bottom: 20px;
     }
 
+    .filename-label {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+
     .filename-wrap {
       display: flex;
       align-items: center;
@@ -623,6 +655,10 @@
     <!-- Step 3: Compress & Download -->
     <div id="step-3" class="hidden">
       <button class="back-link" id="btn-back">← Back to arrange</button>
+      <div class="page-status">
+        <svg class="page-status-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        <span id="page-count"></span>
+      </div>
       <p class="step-title">Choose output size</p>
       <p class="step-subtitle">Smaller = lower quality. Medium works for most portals.</p>
       <div id="size-section" class="size-section">
@@ -641,11 +677,12 @@
         <div class="success-icon">✓</div>
         <p class="success-text">Your PDF is ready!</p>
         <p class="success-sub" id="file-size-info"></p>
+        <label class="filename-label" for="filename-input">Name your file</label>
         <div class="filename-wrap">
-          <input type="text" id="filename-input" class="filename-input" placeholder="document" value="document">
+          <input type="text" id="filename-input" class="filename-input" placeholder="Enter filename" value="">
           <span class="filename-suffix">.pdf</span>
         </div>
-        <a id="download-link" class="btn btn-success btn-block" download="document.pdf">⬇ Download PDF</a>
+        <a id="download-link" class="btn btn-success btn-block" download="document.pdf"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Download PDF</a>
         <button id="btn-restart" class="btn btn-ghost btn-block">Start Over</button>
       </div>
     </div>
@@ -660,7 +697,7 @@
   <div id="toast" class="toast"></div>
 
   <footer>
-    <p>v1.7 &middot; &copy; 2026 Setu Kathawate</p>
+    <p>v1.8 &middot; &copy; 2026 Setu Kathawate</p>
   </footer>
 
   <script>
@@ -955,13 +992,21 @@
         downloadLink.href = url;
 
         const nameInput = document.getElementById('filename-input');
-        nameInput.value = 'document';
+        nameInput.value = '';
         const updateFilename = () => {
-          const name = nameInput.value.trim() || 'document';
-          downloadLink.download = name.endsWith('.pdf') ? name : name + '.pdf';
+          const name = nameInput.value.trim();
+          if (name) {
+            downloadLink.download = name.endsWith('.pdf') ? name : name + '.pdf';
+            downloadLink.classList.remove('disabled');
+          } else {
+            downloadLink.classList.add('disabled');
+          }
         };
         updateFilename();
         nameInput.addEventListener('input', updateFilename);
+
+        // Focus the input so user is prompted to name the file
+        setTimeout(() => nameInput.focus(), 100);
 
         document.getElementById('file-size-info').textContent = formatBytes(pdfBlob.size);
         document.getElementById('processing').classList.add('hidden');
@@ -997,6 +1042,8 @@
       const step3 = document.getElementById('step-3');
       if (currentStep === 3) {
         step3.classList.remove('hidden');
+        const n = files.length;
+        document.getElementById('page-count').textContent = `${n} ${n === 1 ? 'page' : 'pages'}`;
       } else {
         step3.classList.add('hidden');
       }
